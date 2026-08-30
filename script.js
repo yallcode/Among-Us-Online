@@ -1,80 +1,88 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// 1. Auto-resize canvas to match window dimensions
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
+// 2. Load the map image
 const mapImage = new Image();
-// Using the Skeld map from the assets repository
-mapImage.src = 'https://raw.githubusercontent.com/AlvajoyAsante/among-us-assets/main/Maps/The%20Skeld/The_Skeld_map.png'; 
+// Replace with your local relative file path (e.g., 'The_Skeld_map.png') 
+// or a reliable hosted image URL.
+mapImage.src = 'https://raw.githubusercontent.com/AlvajoyAsante/among-us-assets/main/Maps/The%20Skeld/The_Skeld_map.png';
 
-// The player's coordinates in the WORLD, not just on the screen
+// 3. Define Player state (World Coordinates)
 const player = {
-    x: 1000, // Starting deeper inside the map
+    x: 1000, // Starting position inside the map space
     y: 1000,
     width: 40,
     height: 50,
-    color: '#ff0000',
+    color: '#ff0000', // Red crewmate placeholder
     speed: 6
 };
 
-const keys = {
-    w: false, a: false, s: false, d: false,
-    ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false
-};
+// 4. Input Tracking
+const keys = {};
 
-window.addEventListener('keydown', (e) => { 
-    if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
-});
-window.addEventListener('keyup', (e) => { 
-    if (keys.hasOwnProperty(e.key)) keys[e.key] = false; 
-});
-window.addEventListener('resize', () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+window.addEventListener('keydown', (e) => {
+    keys[e.key.toLowerCase()] = true;
+    keys[e.key] = true;
 });
 
+window.addEventListener('keyup', (e) => {
+    keys[e.key.toLowerCase()] = false;
+    keys[e.key] = false;
+});
+
+// 5. Update logic (Movement)
 function update() {
-    // Move the player's world coordinates
     if (keys.w || keys.ArrowUp) player.y -= player.speed;
     if (keys.s || keys.ArrowDown) player.y += player.speed;
     if (keys.a || keys.ArrowLeft) player.x -= player.speed;
     if (keys.d || keys.ArrowRight) player.x += player.speed;
 }
 
+// 6. Rendering logic
 function draw() {
-    // 1. Clear the screen
+    // Clear screen with space color
     ctx.fillStyle = '#0b0c10';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 2. Calculate the camera offset to keep the player centered
+    // Calculate camera offsets to center the player on screen
     const cameraX = player.x - canvas.width / 2;
     const cameraY = player.y - canvas.height / 2;
 
-    // 3. Save the default canvas view
-    ctx.save(); 
-    
-    // 4. Shift the entire canvas view by the camera offset
-    ctx.translate(-cameraX, -cameraY); 
+    ctx.save();
+    // Shift canvas origin according to camera position
+    ctx.translate(-cameraX, -cameraY);
 
-    // 5. Draw the map (it will automatically shift based on the translate above)
-    if (mapImage.complete) {
-        ctx.drawImage(mapImage, 0, 0); 
+    // Draw map safely (naturalWidth prevents crashes if the image fails)
+    if (mapImage.complete && mapImage.naturalWidth !== 0) {
+        ctx.drawImage(mapImage, 0, 0);
     }
 
-    // 6. Draw the player at their actual world coordinates
+    // Draw Player centered on its world coordinates
     ctx.fillStyle = player.color;
-    // Centering the rectangle on the player's exact X/Y point
-    ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+    ctx.fillRect(
+        player.x - player.width / 2,
+        player.y - player.height / 2,
+        player.width,
+        player.height
+    );
 
-    // 7. Restore the canvas view so the next frame starts fresh
-    ctx.restore(); 
+    ctx.restore();
 }
 
+// 7. Core Game Loop
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
+// Launch game
 gameLoop();
