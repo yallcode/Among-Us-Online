@@ -3,224 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Craft Studios</title>
+    <title>Web Engine Studio</title>
     <style>
-        :root {
-            --bg-color: #0f111a;
-            --card-bg: #1a1d2e;
-            --accent: #7269ff;
-            --accent-hover: #584df1;
-            --text-main: #f0f2fe;
-            --text-muted: #a0a5c0;
-        }
-
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-        }
-
-        header {
+            background-color: #2b2b2b;
+            color: #d1d1d1;
+            height: 100vh;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 8%;
-            background: rgba(15, 17, 26, 0.9);
-            position: sticky;
-            top: 0;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        nav a {
-            color: var(--text-muted);
-            text-decoration: none;
-            margin-left: 25px;
-            transition: color 0.2s;
-        }
-
-        nav a:hover {
-            color: var(--text-main);
-        }
-
-        .hero {
-            text-align: center;
-            padding: 80px 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .hero p {
-            color: var(--text-muted);
-            font-size: 1.2rem;
-            margin-bottom: 30px;
-        }
-
-        .games-section {
-            padding: 40px 8%;
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            margin-bottom: 30px;
-            border-left: 4px solid var(--accent);
-            padding-left: 12px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
+            flex-direction: column;
             overflow: hidden;
-            transition: transform 0.2s, box-shadow 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .card-img {
-            width: 100%;
-            height: 180px;
-            background-color: #2a2e45;
+        /* Toolbar */
+        .toolbar {
+            height: 50px;
+            background-color: #383838;
+            border-bottom: 1px solid #1e1e1e;
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            margin-bottom: 8px;
-        }
-
-        .card-desc {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 20px;
+            padding: 0 10px;
+            gap: 10px;
         }
 
         .btn {
-            display: inline-block;
-            background: var(--accent);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: 600;
-            border: none;
+            background-color: #4a4a4a;
+            color: white;
+            border: 1px solid #555;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
+            font-size: 12px;
             transition: background 0.2s;
         }
 
-        .btn:hover {
-            background: var(--accent-hover);
+        .btn:hover { background-color: #5a5a5a; }
+        .btn-play { background-color: #2e8b57; border-color: #1e5c3a; }
+        .btn-play:hover { background-color: #3cb371; }
+        
+        .separator {
+            width: 1px;
+            height: 30px;
+            background-color: #1e1e1e;
+            margin: 0 5px;
         }
 
-        footer {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-muted);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            margin-top: 60px;
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 50px);
+        }
+
+        /* Panels (Explorer & Properties) */
+        .panel {
+            width: 250px;
+            background-color: #252526;
+            border-right: 1px solid #1e1e1e;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-right {
+            border-right: none;
+            border-left: 1px solid #1e1e1e;
+        }
+
+        .panel-header {
+            background-color: #2d2d30;
+            padding: 8px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #1e1e1e;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        /* Explorer Tree */
+        .tree-item {
+            padding: 4px 8px;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 3px;
+        }
+
+        .tree-item:hover { background-color: #2a2d2e; }
+        .tree-item.selected { background-color: #37373d; }
+        
+        .indent { margin-left: 15px; }
+
+        /* Properties Grid */
+        .prop-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            font-size: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .prop-label {
+            color: #9cdcfe;
+            width: 40%;
+            padding-left: 5px;
+        }
+
+        .prop-input {
+            width: 55%;
+            background-color: #3c3c3c;
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 2px 5px;
+            border-radius: 2px;
+        }
+
+        .prop-input:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        /* 3D Viewport */
+        .viewport-container {
+            flex: 1;
+            background-color: #1e1e1e;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            /* Simulate a 3D grid floor */
+            background-image: 
+                linear-gradient(#333 1px, transparent 1px),
+                linear-gradient(90deg, #333 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: center center;
+        }
+
+        .viewport-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #888;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo">PixelCraft</div>
-        <nav>
-            <a href="#games">Games</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
-        </nav>
-    </header>
+    <!-- Top Menu / Toolbar -->
+    <div class="toolbar">
+        <button class="btn">Select</button>
+        <button class="btn">Move</button>
+        <button class="btn">Scale</button>
+        <button class="btn">Rotate</button>
+        <div class="separator"></div>
+        <button class="btn" id="addPartBtn">+ Add Part</button>
+        <div class="separator"></div>
+        <button class="btn btn-play" id="playBtn">▶ Play</button>
+    </div>
 
-    <section class="hero">
-        <h1>Indie Games Built from Scratch</h1>
-        <p>Explore original titles, web builds, and experimental prototypes directly in your browser.</p>
-    </section>
-
-    <section class="games-section" id="games">
-        <div class="section-title">Featured Titles</div>
-        <div class="grid" id="gameGrid">
+    <div class="workspace">
+        
+        <!-- Left Panel: Explorer (Hierarchy) -->
+        <div class="panel">
+            <div class="panel-header">Explorer</div>
+            <div class="panel-content" id="explorerList">
+                <div class="tree-item">📁 Workspace</div>
+                <div class="tree-item indent">📷 Camera</div>
+                <div class="tree-item indent">🌞 DirectionalLight</div>
+                <div class="tree-item indent selected" id="baseplate">⬛ Baseplate</div>
             </div>
-    </section>
+        </div>
 
-    <footer>
-        <p>&copy; 2026 PixelCraft Studios. All rights reserved.</p>
-    </footer>
+        <!-- Center: 3D Viewport -->
+        <div class="viewport-container">
+            <div class="viewport-overlay">Perspective View [Editor]</div>
+            <canvas id="engineCanvas"></canvas>
+        </div>
+
+        <!-- Right Panel: Properties -->
+        <div class="panel panel-right">
+            <div class="panel-header">Properties - <span id="propTitle">Baseplate</span></div>
+            <div class="panel-content">
+                <div class="prop-row">
+                    <div class="prop-label">Name</div>
+                    <input type="text" class="prop-input" value="Baseplate">
+                </div>
+                <div class="prop-row">
+                    <div class="prop-label">Color</div>
+                    <input type="color" class="prop-input" style="padding:0; cursor:pointer;" value="#5c5c5c">
+                </div>
+                <div class="prop-row">
+                    <div class="prop-label">Position</div>
+                    <input type="text" class="prop-input" value="0, -10, 0">
+                </div>
+                <div class="prop-row">
+                    <div class="prop-label">Size</div>
+                    <input type="text" class="prop-input" value="512, 20, 512">
+                </div>
+                <div class="prop-row">
+                    <div class="prop-label">Anchored</div>
+                    <input type="checkbox" checked>
+                </div>
+                <div class="prop-row">
+                    <div class="prop-label">CanCollide</div>
+                    <input type="checkbox" checked>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        const games = [
-            {
-                title: "Cyber Dash",
-                description: "A fast-paced endless runner set in a neon neon-drenched city.",
-                imageText: "Game Preview 1",
-                playUrl: "#"
-            },
-            {
-                title: "Dungeon Crawler",
-                description: "Retro grid-based movement exploration game with custom mechanics.",
-                imageText: "Game Preview 2",
-                playUrl: "#"
-            },
-            {
-                title: "Orbit Defender",
-                description: "Arcade shooter where you shield your home planet from incoming meteors.",
-                imageText: "Game Preview 3",
-                playUrl: "#"
-            }
-        ];
+        // Simple script to handle UI interactions
 
-        const grid = document.getElementById('gameGrid');
+        let partCount = 0;
+        const addPartBtn = document.getElementById('addPartBtn');
+        const explorerList = document.getElementById('explorerList');
+        const playBtn = document.getElementById('playBtn');
+        let isPlaying = false;
 
-        games.forEach(game => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                <div class="card-img">${game.imageText}</div>
-                <div class="card-body">
-                    <h2 class="card-title">${game.title}</h2>
-                    <p class="card-desc">${game.description}</p>
-                    <a href="${game.playUrl}" class="btn">Play Game</a>
-                </div>
-            `;
-            grid.appendChild(card);
+        // Add a new part to the explorer
+        addPartBtn.addEventListener('click', () => {
+            partCount++;
+            const newPart = document.createElement('div');
+            newPart.className = 'tree-item indent';
+            newPart.innerText = `🧊 Part_${partCount}`;
+            
+            // Basic selection logic
+            newPart.addEventListener('click', () => {
+                document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('selected'));
+                newPart.classList.add('selected');
+                document.getElementById('propTitle').innerText = `Part_${partCount}`;
+            });
+
+            explorerList.appendChild(newPart);
         });
+
+        // Toggle Play mode
+        playBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                playBtn.innerText = '⏹ Stop';
+                playBtn.style.backgroundColor = '#cc3333';
+                playBtn.style.borderColor = '#881111';
+                document.querySelector('.viewport-overlay').innerText = "Game Running...";
+                document.querySelector('.viewport-overlay').style.color = "#4CAF50";
+            } else {
+                playBtn.innerText = '▶ Play';
+                playBtn.style.backgroundColor = '#2e8b57';
+                playBtn.style.borderColor = '#1e5c3a';
+                document.querySelector('.viewport-overlay').innerText = "Perspective View [Editor]";
+                document.querySelector('.viewport-overlay').style.color = "#888";
+            }
+        });
+
+        // Handle resizing the canvas
+        const canvas = document.getElementById('engineCanvas');
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
     </script>
 </body>
 </html>
