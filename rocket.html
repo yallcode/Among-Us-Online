@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space WebGL Flyer</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background-color: #000; }
+        canvas { display: block; }
+        .ui-layer {
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between; pointer-events: none;
+        }
+        #scoreBoard { color: #00ffcc; font-weight: bold; font-size: 24px; text-shadow: 1px 1px 3px black; }
+        .back-btn {
+            pointer-events: auto; background: #333; color: white; padding: 10px 20px;
+            text-decoration: none; font-weight: bold; border-radius: 5px; border: 1px solid #555;
+        }
+        .back-btn:hover { background: #555; }
+        #instructions {
+            position: absolute; bottom: 20px; width: 100%; text-align: center;
+            color: #ccc; font-weight: bold; font-size: 18px; pointer-events: none;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div class="ui-layer">
+        <div id="scoreBoard">Asteroids Dodged: <span id="scoreVal">0</span></div>
+        <a href="index.html" class="back-btn">Abort Mission (Menu)</a>
+    </div>
+    <div id="instructions">USE ARROW KEYS OR W/A/S/D TO FLY</div>
+
+    <script>
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.003); // Deep space fade
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Space Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.5);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(50, 100, 50);
+        scene.add(dirLight);
+
+        // Create Starfield (Particles)
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const starArray = new Float32Array(starCount * 3);
+        for(let i=0; i < starCount * 3; i++) {
+            starArray[i] = (Math.random() - 0.5) * 400; // Spread stars wide
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starArray, 3));
+        const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.5});
+        const stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+
+        // Build the Rocket
+        const rocket = new THREE.Group();
+
+        // Hull
+        const hullGeo = new THREE.CylinderGeometry(1.5, 1.5, 8, 16);
+        const hullMat = new THREE.MeshLambertMaterial({ color: 0xdddddd });
+        const hull = new THREE.Mesh(hullGeo, hullMat);
+        hull.rotation.x = Math.PI / 2;
+        rocket.add(hull);
+
+        // Nose Cone
+        const noseGeo = new THREE.ConeGeometry(1.5, 3, 16);
+        const noseMat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
+        const nose = new THREE.Mesh(noseGeo, noseMat);
+        nose.rotation.x = Math.PI / 2;
+        nose.position.z = -5.5;
+        rocket.add(nose);
+
+        // Engine Glow (Engine block)
+        const engineGeo = new THREE.CylinderGeometry(1, 1.5, 2, 16);
+        const engineMat = new THREE.MeshBasicMaterial({ color: 0x00ccff }); // Glowing blue
+        const engine = new THREE.Mesh(engineGeo, engineMat);
+        engine.rotation.x = Math.PI / 2;
+        engine.position.z = 5;
+        rocket.add(engine);
+
+        scene.add(rocket);
+
+        // Create Asteroids (Using Dodecahedron for a rocky look)
+        const asteroids = [];
+        const asteroidCount = 80;
+        const asteroidGeo = new THREE.DodecahedronGeometry(3, 0); // Radius 3, 0 detail (low poly)
+        const asteroidMat = new THREE.MeshLambertMaterial({ color: 0x888888, flatShading: true });
+
+        for (let i = 0; i < asteroidCount; i++) {
+            const rock = new THREE.Mesh(asteroidGeo, asteroidMat);
+            rock.position.x = (Math.random() - 0.5) * 100;
+            rock.position.y = (Math.random() - 0.5) * 80;
+            rock.position.z = -Math.random() * 600 - 50; 
+            
+            // Randomize asteroid sizes
+            const scale = Math.random() * 1.5 + 0.5;
+            rock.scale.set(scale, scale, scale);
+
+            scene.add(rock);
+            asteroids.push(rock);
+        }
+
+        let speed = 2.0;
+        let score = 0;
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, s: false, a: false, d: false };
+
+        window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key.toLowerCase() || e.key)) keys[e.key.toLowerCase() || e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key.toLowerCase() || e.key)) keys[e.key.toLowerCase() || e.key] = false; });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if ((keys.ArrowUp || keys.w) && rocket.position.y < 35) rocket.position.y += 0.6;
+            if ((keys.ArrowDown || keys.s) && rocket.position.y > -35) rocket.position.y -= 0.6;
+            if ((keys.ArrowLeft || keys.a) && rocket.position.x > -45) rocket.position.x -= 0.6;
+            if ((keys.ArrowRight || keys.d) && rocket.position.x < 45) rocket.position.x += 0.6;
+
+            // Rocket roll (spins slightly based on movement)
+            rocket.rotation.z += ((((keys.ArrowRight || keys.d) ? -0.8 : 0) + ((keys.ArrowLeft || keys.a) ? 0.8 : 0)) - rocket.rotation.z) * 0.1;
+            rocket.rotation.x += ((((keys.ArrowUp || keys.w) ? -0.3 : 0) + ((keys.ArrowDown || keys.s) ? 0.3 : 0)) - rocket.rotation.x) * 0.1;
+
+            // Animate starfield moving towards the camera
+            const positions = stars.geometry.attributes.position.array;
+            for(let i = 2; i < starCount * 3; i += 3) {
+                positions[i] += speed * 2;
+                if(positions[i] > 100) positions[i] = -400; // Reset star depth
+            }
+            stars.geometry.attributes.position.needsUpdate = true;
+
+            // Move Asteroids
+            for (let i = 0; i < asteroids.length; i++) {
+                asteroids[i].position.z += speed;
+                asteroids[i].rotation.x += 0.02;
+                asteroids[i].rotation.y += 0.03;
+
+                // Adjust collision size based on asteroid scale
+                const hitRadius = 3 * asteroids[i].scale.x;
+
+                if (Math.abs(rocket.position.x - asteroids[i].position.x) < hitRadius &&
+                    Math.abs(rocket.position.y - asteroids[i].position.y) < hitRadius &&
+                    Math.abs(rocket.position.z - asteroids[i].position.z) < hitRadius + 4) { // Rocket is longer on Z axis
+                    
+                    score = 0; speed = 2.0;
+                    document.getElementById('scoreVal').innerText = score;
+                    asteroids[i].position.z = -600;
+                }
+
+                if (asteroids[i].position.z > 40) {
+                    asteroids[i].position.z = -600;
+                    asteroids[i].position.x = (Math.random() - 0.5) * 100;
+                    asteroids[i].position.y = (Math.random() - 0.5) * 80;
+                    score++; speed += 0.002;
+                    document.getElementById('scoreVal').innerText = score;
+                }
+            }
+            renderer.render(scene, camera);
+        }
+        window.addEventListener('resize', () => { renderer.setSize(window.innerWidth, window.innerHeight); camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); });
+        animate();
+    </script>
+</body>
+</html>
