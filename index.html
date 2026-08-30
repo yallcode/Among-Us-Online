@@ -3,118 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plane</title>
+    <title>Plane Gamer</title>
     <style>
-        /* Removes margins and scrollbars so the game fills the screen */
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: #87CEEB; 
+        /* This CSS makes the canvas take up the whole screen and styles the text */
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #2f3542; /* Dark background */
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
         }
-        #ui {
+        #gameCanvas {
+            display: block;
+        }
+        #scoreBoard {
             position: absolute;
             top: 20px;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 24px;
+            left: 20px;
+            font-size: 32px;
+            color: #ffffff;
             font-weight: bold;
-            pointer-events: none; /* Lets clicks pass through to the game */
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px #000000;
+        }
+        #uiOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            pointer-events: none; /* Let clicks pass through to the canvas */
+        }
+        #message {
+            font-size: 40px;
+            color: #ffa502; /* Cyberpunk yellow */
+            font-weight: bold;
+            text-shadow: 3px 3px 0 #000;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px 40px;
+            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    
-    <div id="ui">Use WASD or Arrow Keys to move</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <div id="scoreBoard">Score: 0</div>
+    <div id="uiOverlay">
+        <div id="message">PRESS SPACE OR CLICK TO FLY</div>
+    </div>
     
+    <canvas id="gameCanvas"></canvas>
+
     <script>
-        // 1. SET UP THE SCENE
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const uiMessage = document.getElementById('message');
+        const scoreBoard = document.getElementById('scoreBoard');
 
-        // 2. SET UP THE CAMERA
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
-        // 3. SET UP THE RENDERER
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        // Make canvas fill the screen
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // 4. ADD LIGHTING
-        // Ambient light for general brightness
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        // Directional light for shadows and depth
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(10, 20, 10);
-        scene.add(dirLight);
+        // Game Variables
+        let frames = 0;
+        let score = 0;
+        let gameActive = false;
+        let obstacles = [];
 
-        // 5. CREATE THE GROUND
-        const groundGeo = new THREE.PlaneGeometry(100, 100);
-        const groundMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Forest green
-        const ground = new THREE.Mesh(groundGeo, groundMat);
-        ground.rotation.x = -Math.PI / 2; // Lay the plane flat
-        scene.add(ground);
+        // The Plane Object
+        const plane = {
+            x: window.innerWidth * 0.15,
+            y: canvas.height / 2,
+            width: 50,
+            height: 30,
+            velocity: 0,
+            gravity: 0.4,
+            jumpPower: -8,
+            
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Tilt the plane based on velocity (falling vs jumping)
+                let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.05)));
+                ctx.rotate(rotation);
 
-        // 6. CREATE THE PLAYER (A Red Cube)
-        const playerGeo = new THREE.BoxGeometry(1, 1, 1);
-        const playerMat = new THREE.MeshStandardMaterial({ color: 0xff4444 });
-        const player = new THREE.Mesh(playerGeo, playerMat);
-        player.position.y = 0.5; // Rest exactly on top of the ground
-        scene.add(player);
+                // Draw Plane Body (Neon Red)
+                ctx.fillStyle = '#ff4757';
+                ctx.beginPath();
+                ctx.moveTo(0, 10);
+                ctx.lineTo(40, 10);
+                ctx.lineTo(50, 20); // Nose
+                ctx.lineTo(40, 30);
+                ctx.lineTo(0, 30);
+                ctx.closePath();
+                ctx.fill();
 
-        // 7. INPUT HANDLING
-        const keys = { 
-            w: false, a: false, s: false, d: false, 
-            ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false 
+                // Draw Wing (White)
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.moveTo(15, 20);
+                ctx.lineTo(25, 0);
+                ctx.lineTo(35, 20);
+                ctx.fill();
+
+                // Draw Window Detail (Dark)
+                ctx.fillStyle = '#2f3542';
+                ctx.fillRect(35, 12, 8, 6);
+
+                ctx.restore();
+            },
+            
+            update() {
+                this.velocity += this.gravity;
+                this.y += this.velocity;
+            }
         };
-        
-        // Keep track of which keys are currently pressed down
-        window.addEventListener('keydown', (e) => {
-            if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
-        });
-        
-        // Keep track of when keys are released
-        window.addEventListener('keyup', (e) => {
-            if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-        });
 
-        // Make sure the game resizes if the browser window changes
-        window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-        });
+        // Handle the towers/obstacles
+        function handleObstacles() {
+            // Add new obstacles every 90 frames
+            if (frames % 90 === 0) {
+                let gap = 220; // Space between top and bottom towers
+                let minHeight = 50;
+                let topHeight = Math.random() * (canvas.height - gap - minHeight * 2) + minHeight;
+                
+                // Top Tower
+                obstacles.push({
+                    x: canvas.width,
+                    y: 0,
+                    width: 60,
+                    height: topHeight,
+                    passed: false
+                });
+                
+                // Bottom Tower
+                obstacles.push({
+                    x: canvas.width,
+                    y: topHeight + gap,
+                    width: 60,
+                    height: canvas.height - topHeight - gap
+                });
+            }
 
-        // 8. THE GAME LOOP
-        const speed = 0.15; // Player movement speed
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.x -= 5; // Game speed (moving left)
 
-        function animate() {
-            // Tell the browser to call this function on the next frame
-            requestAnimationFrame(animate);
+                // Draw Obstacle (Neon Blue)
+                ctx.fillStyle = '#1e90ff';
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                
+                // Add a cool border to towers
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(obs.x, obs.y, obs.width, obs.height);
 
-            // Update player position based on keys pressed
-            if (keys.w || keys.ArrowUp) player.position.z -= speed;
-            if (keys.s || keys.ArrowDown) player.position.z += speed;
-            if (keys.a || keys.ArrowLeft) player.position.x -= speed;
-            if (keys.d || keys.ArrowRight) player.position.x += speed;
+                // Collision Detection (Box collision)
+                if (
+                    plane.x < obs.x + obs.width &&
+                    plane.x + plane.width > obs.x &&
+                    plane.y < obs.y + obs.height &&
+                    plane.y + plane.height > obs.y
+                ) {
+                    gameOver();
+                }
 
-            // Make the camera follow the player smoothly
-            camera.position.x = player.position.x;
-            camera.position.y = player.position.y + 5;
-            camera.position.z = player.position.z + 8;
-            camera.lookAt(player.position); // Always stare at the player
+                // Update Score (Only check the top tower so we don't double count)
+                if (obs.y === 0 && obs.x + obs.width < plane.x && !obs.passed) {
+                    score++;
+                    obs.passed = true;
+                    scoreBoard.innerText = "Score: " + score;
+                }
+            }
 
-            // Draw the scene
-            renderer.render(scene, camera);
+            // Remove obstacles that have gone off-screen to save memory
+            if (obstacles.length > 0 && obstacles[0].x < -100) {
+                obstacles.shift(); // Remove top
+                obstacles.shift(); // Remove bottom
+            }
         }
 
-        // Start the loop!
-        animate();
+        // Main Game Loop
+        function animate() {
+            if (!gameActive) return;
+            
+            // Clear the screen for the next frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            plane.draw();
+            plane.update();
+            handleObstacles();
+
+            // Floor or Ceiling Crash
+            if (plane.y + plane.height >= canvas.height || plane.y <= 0) {
+                gameOver();
+            }
+
+            frames++;
+            requestAnimationFrame(animate); // Loop the animation
+        }
+
+        function gameOver() {
+            gameActive = false;
+            uiMessage.innerText = "CRASHED! CLICK TO RESTART";
+            uiMessage.style.display = "block";
+        }
+
+        function triggerJump() {
+            if (!gameActive) {
+                // Reset Game State
+                plane.y = canvas.height / 2;
+                plane.velocity = 0;
+                obstacles = [];
+                score = 0;
+                frames = 0;
+                scoreBoard.innerText = "Score: 0";
+                uiMessage.style.display = "none";
+                gameActive = true;
+                animate(); // Start the loop
+            }
+            // Apply upward force
+            plane.velocity = plane.jumpPower;
+        }
+
+        // Controls (Mouse click, Touch, or Spacebar)
+        window.addEventListener('mousedown', triggerJump);
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stop screen from scrolling on mobile
+            triggerJump();
+        });
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                triggerJump();
+            }
+        });
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (!gameActive) {
+                plane.y = canvas.height / 2;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                plane.draw();
+            }
+        });
+        
+        // Draw the plane on the start screen before the game begins
+        plane.draw();
+
     </script>
 </body>
 </html>
